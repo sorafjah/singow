@@ -1,571 +1,458 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>歩行者用信号機</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>歩行者用信号機</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
-            background: linear-gradient(to bottom, #87CEEB, #B0E0E6);
-            overflow: hidden;
-            touch-action: manipulation;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+      background: linear-gradient(to bottom, #87CEEB, #B0E0E6);
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
 
-        .screen {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-        }
+    .screen { display: none; width: 100vw; height: 100vh; }
+    .screen.active { display: flex; }
 
-        .screen.active {
-            display: flex;
-        }
+    /* 設定画面 */
+    #settings-screen { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
 
-        /* 設定画面 */
-        #settings-screen {
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+    .settings-container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+    }
 
-        .settings-container {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-width: 500px;
-            width: 90%;
-        }
+    h1 { text-align: center; color: #333; margin-bottom: 30px; font-size: 28px; }
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
+    .setting-item { margin-bottom: 25px; }
 
-        .setting-item {
-            margin-bottom: 25px;
-        }
+    .setting-label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #555;
+    }
 
-        .setting-label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #555;
-        }
+    .time-input-group { display: flex; align-items: center; gap: 10px; }
 
-        .time-input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .time-input-group input {
+      flex: 1;
+      padding: 15px;
+      font-size: 24px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
 
-        .time-input-group input {
-            flex: 1;
-            padding: 15px;
-            font-size: 24px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
+    .time-controls { display: flex; flex-direction: column; gap: 5px; }
 
-        .time-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
+    /* △▽：小さめ・囲みなし・水色線だけ */
+    .time-btn {
+      width: 34px;
+      height: 26px;
+      font-size: 18px;
+      border: none;
+      background: transparent;
+      color: #4aa3df;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0;
+    }
+    .time-btn:active { opacity: 0.6; }
 
-        .time-btn {
-            width: 34px;
-            height: 26px;
-            font-size: 18px;
-            border: none;
-            background: transparent;
-            color: #4aa3df; /* 水色 */
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 700;
-            line-height: 1;
-            padding: 0;
-        }
+    .mode-selector { display: flex; gap: 15px; margin-top: 10px; }
 
-        .time-btn:active {
-            opacity: 0.6;
-        }
+    .mode-btn {
+      flex: 1;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      border: 3px solid #2196F3;
+      background: white;
+      color: #2196F3;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
 
-        .mode-selector {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
+    .mode-btn.selected { background: #2196F3; color: white; }
 
-        .mode-btn {
-            flex: 1;
-            padding: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            border: 3px solid #2196F3;
-            background: white;
-            color: #2196F3;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    /* スタート：手動選択時と同じ青 */
+    .start-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 26px;
+      font-weight: bold;
+      border: none;
+      background: #2196F3;
+      color: white;
+      border-radius: 15px;
+      cursor: pointer;
+      margin-top: 24px;
+      box-shadow: 0 6px 18px rgba(33,150,243,0.35);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .start-btn:active { opacity: 0.9; transform: scale(0.98); }
 
-        .mode-btn.selected {
-            background: #2196F3;
-            color: white;
-        }
+    /* 信号機画面 */
+    #signal-screen { position: relative; justify-content: center; align-items: center; }
 
-        .start-btn {
-            width: 100%;
-            padding: 18px;
-            font-size: 26px;
-            font-weight: bold;
-            border: none;
-            background: #2196F3; /* 手動ボタンと同じ */
-            color: white;
-            border-radius: 15px;
-            cursor: pointer;
-            margin-top: 24px;
-            box-shadow: 0 6px 18px rgba(33,150,243,0.35);
-            transition: transform 0.2s, opacity 0.2s;
-        }
+    .traffic-light-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 80%;
+      max-width: 400px;
+      height: 80vh;
+      justify-content: center;
+    }
 
-        .start-btn:active {
-            opacity: 0.9;
-            transform: scale(0.98);
-        }
+    /* 信号機本体：薄いグレー */
+    .signal-box {
+      background: #d9dde2;
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      width: 100%;
+      max-width: 350px;
+    }
 
-        /* 信号機画面 */
-        #signal-screen {
-            position: relative;
-            justify-content: center;
-            align-items: center;
-        }
+    .signal {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.3s;
+    }
 
-        .traffic-light-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 80%;
-            max-width: 400px;
-            height: 80vh;
-            justify-content: center;
-        }
+    .signal.red { background: #1a1a1a; }
+    .signal.red.active {
+      background: #ff0000;
+      box-shadow: 0 0 40px rgba(255,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
+    }
 
-        .signal-box {
-            background: #d9dde2; /* 薄いグレーの信号機本体 */
-            border-radius: 30px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            width: 100%;
-            max-width: 350px;
-        }
+    .signal.green { background: #1a1a1a; }
 
-        .signal {
-            width: 100%;
-            aspect-ratio: 1;
-            border-radius: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            transition: background-color 0.3s;
-        }
+    /* 人物は白のまま、光だけ控えめ */
+    .signal.green.active {
+      background: #00ff00;
+      box-shadow: 0 0 22px rgba(0,255,0,0.45), inset 0 0 14px rgba(255,255,255,0.10);
+    }
 
-        .signal.red {
-            background: #1a1a1a;
-        }
+    .signal.green.blinking { animation: blink 1s steps(1) infinite; }
 
-        .signal.red.active {
-            background: #ff0000;
-            box-shadow: 0 0 40px rgba(255,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
-        }
+    @keyframes blink {
+      0%, 49.9% {
+        background: #00ff00;
+        box-shadow: 0 0 22px rgba(0,255,0,0.45), inset 0 0 14px rgba(255,255,255,0.10);
+      }
+      50%, 100% {
+        background: #1a1a1a;
+        box-shadow: none;
+      }
+    }
 
-        .signal.green {
-            background: #1a1a1a;
-        }
+    .signal-icon { width: 60%; height: 60%; fill: currentColor; }
 
-        .signal.green.active {
-            /* 人物は白のまま（ここは触らず）、光だけ抑えめにします */
-            background: #00ff00;
-            box-shadow: 0 0 22px rgba(0,255,0,0.45), inset 0 0 14px rgba(255,255,255,0.10);
-        }
+    .signal.red .signal-icon { color: #400000; }
+    .signal.red.active .signal-icon { color: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); }
 
-        .signal.green.blinking {
-            animation: blink 1s steps(1) infinite;
-        }
+    .signal.green .signal-icon { color: #004000; }
+    .signal.green.active .signal-icon { color: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); }
 
-        @keyframes blink {
-            0%, 49.9% {
-                background: #00ff00;
-                box-shadow: 0 0 22px rgba(0,255,0,0.45), inset 0 0 14px rgba(255,255,255,0.10);
-            }
-            50%, 100% {
-                background: #1a1a1a;
-                box-shadow: none;
-            }
-        }
+    /* 操作ボタン（信号の真下に配置） */
+    .hidden-controls {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 16px;
+      pointer-events: auto;
+    }
 
-        .signal-icon {
-            width: 60%;
-            height: 60%;
-            fill: currentColor;
-        }
+    .control-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      opacity: 0.18;
+      transition: opacity 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      background: #666;
+      color: white;
+    }
 
-        .signal.red .signal-icon {
-            color: #400000;
-        }
+    .control-btn:active { opacity: 0.55; }
+    .next-btn.hidden { display: none; }
 
-        .signal.red.active .signal-icon {
-            color: #fff;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
-        }
+    /* レスポンシブ調整 */
+    @media (max-width: 480px) {
+      .settings-container { padding: 20px; }
+      h1 { font-size: 24px; }
+      .setting-label { font-size: 16px; }
+      .time-input-group input { font-size: 20px; }
+      .control-btn { width: 50px; height: 50px; font-size: 24px; }
+    }
 
-        .signal.green .signal-icon {
-            color: #004000;
-        }
-
-        .signal.green.active .signal-icon {
-            color: #fff;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
-        }
-
-        /* 隠しコントロールボタン */
-        .hidden-controls {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .control-btn {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            opacity: 0.15;
-            transition: opacity 0.3s;
-            pointer-events: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-        }
-
-        .control-btn:active {
-            opacity: 0.5;
-        }
-
-        .settings-btn {
-            bottom: 30px;
-            left: 30px;
-            background: #666;
-            color: white;
-        }
-
-        .next-btn {
-            bottom: 30px;
-            right: 30px;
-            background: #666;
-            color: white;
-        }
-
-        .next-btn.hidden {
-            display: none;
-        }
-
-        /* レスポンシブ調整 */
-        @media (max-width: 480px) {
-            .settings-container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .setting-label {
-                font-size: 16px;
-            }
-
-            .time-input-group input {
-                font-size: 20px;
-            }
-
-            .control-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 24px;
-            }
-        }
-
-        @media (orientation: landscape) {
-            .traffic-light-container {
-                height: 90vh;
-            }
-        }
-    </style>
+    @media (orientation: landscape) {
+      .traffic-light-container { height: 90vh; }
+    }
+  </style>
 </head>
 <body>
-    <!-- 設定画面 -->
-    <div id="settings-screen" class="screen active">
-        <div class="settings-container">
-            <h1>歩行者用信号機</h1>
+  <!-- 設定画面 -->
+  <div id="settings-screen" class="screen active">
+    <div class="settings-container">
+      <h1>歩行者用信号機</h1>
 
-            <div class="setting-item">
-                <label class="setting-label">赤信号の時間（秒）</label>
-                <div class="time-input-group">
-                    <input type="number" id="red-time" value="10" min="1" max="99" readonly>
-                    <div class="time-controls">
-                        <button class="time-btn" onclick="adjustTime('red-time', 1)">△</button>
-                        <button class="time-btn" onclick="adjustTime('red-time', -1)">▽</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">青信号の時間（秒）</label>
-                <div class="time-input-group">
-                    <input type="number" id="green-time" value="10" min="1" max="99" readonly>
-                    <div class="time-controls">
-                        <button class="time-btn" onclick="adjustTime('green-time', 1)">△</button>
-                        <button class="time-btn" onclick="adjustTime('green-time', -1)">▽</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">青点滅の時間（秒）</label>
-                <div class="time-input-group">
-                    <input type="number" id="blink-time" value="5" min="1" max="99" readonly>
-                    <div class="time-controls">
-                        <button class="time-btn" onclick="adjustTime('blink-time', 1)">△</button>
-                        <button class="time-btn" onclick="adjustTime('blink-time', -1)">▽</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">操作モード</label>
-                <div class="mode-selector">
-                    <button class="mode-btn selected" id="auto-mode-btn" onclick="selectMode('auto')">自動</button>
-                    <button class="mode-btn" id="manual-mode-btn" onclick="selectMode('manual')">手動</button>
-                </div>
-            </div>
-
-            <button class="start-btn" onclick="startSignal()">スタート</button>
+      <div class="setting-item">
+        <label class="setting-label">赤信号の時間（秒）</label>
+        <div class="time-input-group">
+          <input type="number" id="red-time" value="10" min="1" max="99" readonly />
+          <div class="time-controls">
+            <button class="time-btn" onclick="adjustTime('red-time', 1)">△</button>
+            <button class="time-btn" onclick="adjustTime('red-time', -1)">▽</button>
+          </div>
         </div>
+      </div>
+
+      <div class="setting-item">
+        <label class="setting-label">青信号の時間（秒）</label>
+        <div class="time-input-group">
+          <input type="number" id="green-time" value="10" min="1" max="99" readonly />
+          <div class="time-controls">
+            <button class="time-btn" onclick="adjustTime('green-time', 1)">△</button>
+            <button class="time-btn" onclick="adjustTime('green-time', -1)">▽</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label class="setting-label">青点滅の時間（秒）</label>
+        <div class="time-input-group">
+          <input type="number" id="blink-time" value="5" min="1" max="99" readonly />
+          <div class="time-controls">
+            <button class="time-btn" onclick="adjustTime('blink-time', 1)">△</button>
+            <button class="time-btn" onclick="adjustTime('blink-time', -1)">▽</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label class="setting-label">操作モード</label>
+        <div class="mode-selector">
+          <button class="mode-btn selected" id="auto-mode-btn" onclick="selectMode('auto')">自動</button>
+          <button class="mode-btn" id="manual-mode-btn" onclick="selectMode('manual')">手動</button>
+        </div>
+      </div>
+
+      <button class="start-btn" onclick="startSignal()">スタート</button>
     </div>
+  </div>
 
-    <!-- 信号機画面 -->
-    <div id="signal-screen" class="screen">
-        <div class="traffic-light-container">
-            <div class="signal-box">
-                <div class="signal red" id="red-signal">
-                    <svg class="signal-icon" viewBox="0 0 100 100" aria-label="とまれ">
-                        <!-- 画像の雰囲気：直立・腕は下ろす・脚はまっすぐ -->
-                        <!-- head -->
-                        <circle cx="50" cy="22" r="12"/>
-
-                        <!-- torso -->
-                        <rect x="42" y="36" width="16" height="34" rx="6"/>
-
-                        <!-- arms (down) -->
-                        <rect x="30" y="40" width="10" height="34" rx="5"/>
-                        <rect x="60" y="40" width="10" height="34" rx="5"/>
-
-                        <!-- legs (together) -->
-                        <!-- 腕と同じ太さ(10)に変更 -->
-                        <rect x="40" y="70" width="10" height="26" rx="5"/>
-                        <rect x="50" y="70" width="10" height="26" rx="5"/>
-                    </svg>
-                </div>
-                <div class="signal green" id="green-signal">
-                    <svg class="signal-icon" viewBox="0 0 100 100" aria-label="すすめ">
-                        <!-- 画像の雰囲気：左手は伸ばし気味、右手は肘が曲がっているのが分かる、足首から先は描かない -->
-                        <!-- head -->
-                        <circle cx="50" cy="22" r="12"/>
-
-                        <!-- torso -->
-                        <rect x="42" y="36" width="16" height="30" rx="6"/>
-
-                        <!-- arms -->
-                        <!-- 左腕：伸ばし気味（長く） -->
-                        <rect x="18" y="44" width="34" height="8" rx="4" transform="rotate(-25 35 48)"/>
-
-                        <!-- 右腕：上腕 + 前腕（肘が曲がった感じ） -->
-                        <rect x="54" y="42" width="20" height="8" rx="4" transform="rotate(25 64 46)"/>
-                        <rect x="60" y="50" width="20" height="8" rx="4" transform="rotate(-35 70 54)"/>
-
-                        <!-- legs (ハの字) ※足首から先(足)は描かない -->
-                        <rect x="38" y="64" width="10" height="30" rx="5" transform="rotate(28 43 79)"/>
-                        <rect x="52" y="64" width="10" height="30" rx="5" transform="rotate(-28 57 79)"/>
-                    </svg>
-                </div>
-            </div>
+  <!-- 信号機画面 -->
+  <div id="signal-screen" class="screen">
+    <div class="traffic-light-container">
+      <div class="signal-box">
+        <div class="signal red" id="red-signal">
+          <svg class="signal-icon" viewBox="0 0 100 100" aria-label="とまれ">
+            <!-- 赤：直立・腕は下ろす・脚はそろえる（腕と同じ太さ） -->
+            <circle cx="50" cy="22" r="12" />
+            <rect x="42" y="36" width="16" height="34" rx="6" />
+            <rect x="30" y="40" width="10" height="34" rx="5" />
+            <rect x="60" y="40" width="10" height="34" rx="5" />
+            <rect x="40" y="70" width="10" height="26" rx="5" />
+            <rect x="50" y="70" width="10" height="26" rx="5" />
+          </svg>
         </div>
 
-        <div class="hidden-controls">
-            <button class="control-btn settings-btn" onclick="backToSettings()">⚙️</button>
-            <button class="control-btn next-btn" id="next-btn" onclick="nextState()">▷</button>
+        <div class="signal green" id="green-signal">
+          <svg class="signal-icon" viewBox="0 0 100 100" aria-label="すすめ">
+            <!-- 青：左腕長め、右腕は肘が曲がる、足はハの字（足先なし） -->
+            <circle cx="50" cy="22" r="12" />
+            <rect x="42" y="36" width="16" height="30" rx="6" />
+
+            <!-- 左腕：長め -->
+            <rect x="18" y="44" width="34" height="8" rx="4" transform="rotate(-25 35 48)" />
+
+            <!-- 右腕：上腕 + 前腕 -->
+            <rect x="54" y="42" width="20" height="8" rx="4" transform="rotate(25 64 46)" />
+            <rect x="60" y="50" width="20" height="8" rx="4" transform="rotate(-35 70 54)" />
+
+            <!-- legs：ハの字（足先なし） -->
+            <rect x="38" y="64" width="10" height="30" rx="5" transform="rotate(28 43 79)" />
+            <rect x="52" y="64" width="10" height="30" rx="5" transform="rotate(-28 57 79)" />
+          </svg>
         </div>
+      </div>
+
+      <!-- ⚙️ と ▷ を信号の真下へ -->
+      <div class="hidden-controls">
+        <button class="control-btn settings-btn" id="settings-btn" onclick="backToSettings()">⚙️</button>
+        <button class="control-btn next-btn" id="next-btn" onclick="nextState()">▷</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let mode = 'auto';
-        let currentState = 'red';
-        let timer = null;
-        let redTime = 10;
-        let greenTime = 10;
-        let blinkTime = 5;
+  <script>
+    let mode = 'auto';
+    let currentState = 'red';
+    let timer = null;
+    let redTime = 10;
+    let greenTime = 10;
+    let blinkTime = 5;
 
-        function adjustTime(inputId, delta) {
-            const input = document.getElementById(inputId);
-            let value = parseInt(input.value) + delta;
-            if (value < 1) value = 1;
-            if (value > 99) value = 99;
-            input.value = value;
-        }
+    function $(id) {
+      return document.getElementById(id);
+    }
 
-        function selectMode(selectedMode) {
-            mode = selectedMode;
-            document.getElementById('auto-mode-btn').classList.toggle('selected', mode === 'auto');
-            document.getElementById('manual-mode-btn').classList.toggle('selected', mode === 'manual');
-        }
+    function adjustTime(inputId, delta) {
+      const input = $(inputId);
+      if (!input) return;
+      let value = parseInt(input.value, 10) + delta;
+      if (value < 1) value = 1;
+      if (value > 99) value = 99;
+      input.value = value;
+    }
 
-        function startSignal() {
-            redTime = parseInt(document.getElementById('red-time').value);
-            greenTime = parseInt(document.getElementById('green-time').value);
-            blinkTime = parseInt(document.getElementById('blink-time').value);
+    function selectMode(selectedMode) {
+      mode = selectedMode;
+      const autoBtn = $('auto-mode-btn');
+      const manualBtn = $('manual-mode-btn');
+      if (autoBtn) autoBtn.classList.toggle('selected', mode === 'auto');
+      if (manualBtn) manualBtn.classList.toggle('selected', mode === 'manual');
+    }
 
-            document.getElementById('settings-screen').classList.remove('active');
-            document.getElementById('signal-screen').classList.add('active');
+    function startSignal() {
+      redTime = parseInt($('red-time')?.value || '10', 10);
+      greenTime = parseInt($('green-time')?.value || '10', 10);
+      blinkTime = parseInt($('blink-time')?.value || '5', 10);
 
-            const nextBtn = document.getElementById('next-btn');
-            nextBtn.classList.toggle('hidden', mode === 'auto');
+      $('settings-screen')?.classList.remove('active');
+      $('signal-screen')?.classList.add('active');
 
-            currentState = 'red';
-            updateSignal();
+      const nextBtn = $('next-btn');
+      if (nextBtn) nextBtn.classList.toggle('hidden', mode === 'auto');
 
-            if (mode === 'auto') {
-                startAutoMode();
-            }
-        }
+      currentState = 'red';
+      updateSignal();
 
-        function updateSignal() {
-            const redSignal = document.getElementById('red-signal');
-            const greenSignal = document.getElementById('green-signal');
+      if (mode === 'auto') startAutoMode();
+    }
 
-            redSignal.classList.remove('active');
-            greenSignal.classList.remove('active', 'blinking');
+    function updateSignal() {
+      const redSignal = $('red-signal');
+      const greenSignal = $('green-signal');
+      if (!redSignal || !greenSignal) return;
 
-            if (currentState === 'red') {
-                redSignal.classList.add('active');
-            } else if (currentState === 'green') {
-                greenSignal.classList.add('active');
-            } else if (currentState === 'blink') {
-                greenSignal.classList.add('active', 'blinking');
-            }
-        }
+      redSignal.classList.remove('active');
+      greenSignal.classList.remove('active', 'blinking');
 
-        function startAutoMode() {
-            clearTimeout(timer);
+      if (currentState === 'red') {
+        redSignal.classList.add('active');
+      } else if (currentState === 'green') {
+        greenSignal.classList.add('active');
+      } else if (currentState === 'blink') {
+        greenSignal.classList.add('active', 'blinking');
+      }
+    }
 
-            let duration;
-            if (currentState === 'red') {
-                duration = redTime * 1000;
-            } else if (currentState === 'green') {
-                duration = greenTime * 1000;
-            } else if (currentState === 'blink') {
-                duration = blinkTime * 1000;
-            }
+    function startAutoMode() {
+      clearTimeout(timer);
 
-            timer = setTimeout(() => {
-                nextState();
-                if (mode === 'auto') {
-                    startAutoMode();
-                }
-            }, duration);
-        }
+      let duration = 1000;
+      if (currentState === 'red') duration = redTime * 1000;
+      else if (currentState === 'green') duration = greenTime * 1000;
+      else if (currentState === 'blink') duration = blinkTime * 1000;
 
-        function nextState() {
-            if (currentState === 'red') {
-                currentState = 'green';
-            } else if (currentState === 'green') {
-                currentState = 'blink';
-            } else if (currentState === 'blink') {
-                currentState = 'red';
-            }
-            updateSignal();
-        }
+      timer = setTimeout(() => {
+        nextState();
+        if (mode === 'auto') startAutoMode();
+      }, duration);
+    }
 
-        function backToSettings() {
-            clearTimeout(timer);
-            document.getElementById('signal-screen').classList.remove('active');
-            document.getElementById('settings-screen').classList.add('active');
-        }
+    function nextState() {
+      if (currentState === 'red') currentState = 'green';
+      else if (currentState === 'green') currentState = 'blink';
+      else currentState = 'red';
+      updateSignal();
+    }
 
-        // タッチイベントの最適化
-        document.addEventListener('touchstart', function(e) {
-            if (e.target.tagName === 'BUTTON') {
-                e.target.style.transform = 'scale(0.95)';
-            }
-        }, {passive: true});
+    function backToSettings() {
+      clearTimeout(timer);
+      $('signal-screen')?.classList.remove('active');
+      $('settings-screen')?.classList.add('active');
+    }
 
-        document.addEventListener('touchend', function(e) {
-            if (e.target.tagName === 'BUTTON') {
-                e.target.style.transform = '';
-            }
-        }, {passive: true});
+    // タッチイベントの最適化
+    document.addEventListener('touchstart', function (e) {
+      if (e.target && e.target.tagName === 'BUTTON') {
+        e.target.style.transform = 'scale(0.95)';
+      }
+    }, { passive: true });
 
-        // フルスクリーンリクエスト
-        function requestFullscreen() {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
-        }
+    document.addEventListener('touchend', function (e) {
+      if (e.target && e.target.tagName === 'BUTTON') {
+        e.target.style.transform = '';
+      }
+    }, { passive: true });
 
-        // 画面の向きと高さの調整
-        function adjustLayout() {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        }
+    // 画面の向きと高さの調整
+    function adjustLayout() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
 
-        window.addEventListener('resize', adjustLayout);
-        window.addEventListener('orientationchange', adjustLayout);
-        adjustLayout();
-    </script>
+    window.addEventListener('resize', adjustLayout);
+    window.addEventListener('orientationchange', adjustLayout);
+
+    // --- 簡易テスト（コンソールに結果を出す） ---
+    function runTests() {
+      const required = [
+        'settings-screen', 'signal-screen',
+        'auto-mode-btn', 'manual-mode-btn',
+        'red-time', 'green-time', 'blink-time',
+        'red-signal', 'green-signal',
+        'next-btn', 'settings-btn'
+      ];
+      const missing = required.filter(id => !$(id));
+      if (missing.length) {
+        console.error('[TEST] Missing elements:', missing);
+      } else {
+        console.log('[TEST] OK: all required elements exist.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      adjustLayout();
+      runTests();
+    });
+  </script>
 </body>
 </html>
