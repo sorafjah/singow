@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>歩行者用信号機</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB, #B0E0E6);
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* 設定画面 */
+        #settings-screen {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .settings-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .setting-item {
+            margin-bottom: 25px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input-group input {
+            flex: 1;
+            padding: 15px;
+            font-size: 24px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .time-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .time-btn {
+            width: 50px;
+            height: 40px;
+            font-size: 24px;
+            border: 2px solid #4CAF50;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .time-btn:active {
+            background: #45a049;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border: 3px solid #2196F3;
+            background: white;
+            color: #2196F3;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.selected {
+            background: #2196F3;
+            color: white;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            border: none;
+            background: #FF5722;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(255,87,34,0.3);
+            transition: transform 0.2s;
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 信号機画面 */
+        #signal-screen {
+            position: relative;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .traffic-light-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 80%;
+            max-width: 400px;
+            height: 80vh;
+            justify-content: center;
+        }
+
+        .signal-box {
+            background: #2C3E50;
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .signal {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        .signal.red {
+            background: #1a1a1a;
+        }
+
+        .signal.red.active {
+            background: #ff0000;
+            box-shadow: 0 0 40px rgba(255,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
+        }
+
+        .signal.green {
+            background: #1a1a1a;
+        }
+
+        .signal.green.active {
+            background: #00ff00;
+            box-shadow: 0 0 40px rgba(0,255,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
+        }
+
+        .signal.green.blinking {
+            animation: blink 1s steps(1) infinite;
+        }
+
+        @keyframes blink {
+            0%, 49.9% {
+                background: #00ff00;
+                box-shadow: 0 0 40px rgba(0,255,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
+            }
+            50%, 100% {
+                background: #1a1a1a;
+                box-shadow: none;
+            }
+        }
+
+        .signal-icon {
+            width: 60%;
+            height: 60%;
+            fill: currentColor;
+        }
+
+        .signal.red .signal-icon {
+            color: #400000;
+        }
+
+        .signal.red.active .signal-icon {
+            color: #fff;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+        }
+
+        .signal.green .signal-icon {
+            color: #004000;
+        }
+
+        .signal.green.active .signal-icon {
+            color: #fff;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+        }
+
+        /* 隠しコントロールボタン */
+        .hidden-controls {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .control-btn {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            opacity: 0.15;
+            transition: opacity 0.3s;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+
+        .control-btn:active {
+            opacity: 0.5;
+        }
+
+        .settings-btn {
+            bottom: 30px;
+            left: 30px;
+            background: #666;
+            color: white;
+        }
+
+        .next-btn {
+            bottom: 30px;
+            right: 30px;
+            background: #666;
+            color: white;
+        }
+
+        .next-btn.hidden {
+            display: none;
+        }
+
+        /* レスポンシブ調整 */
+        @media (max-width: 480px) {
+            .settings-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .setting-label {
+                font-size: 16px;
+            }
+
+            .time-input-group input {
+                font-size: 20px;
+            }
+
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .traffic-light-container {
+                height: 90vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 設定画面 -->
+    <div id="settings-screen" class="screen active">
+        <div class="settings-container">
+            <h1>🚦 歩行者用信号機</h1>
+
+            <div class="setting-item">
+                <label class="setting-label">🔴 赤信号の時間（秒）</label>
+                <div class="time-input-group">
+                    <input type="number" id="red-time" value="10" min="1" max="99" readonly>
+                    <div class="time-controls">
+                        <button class="time-btn" onclick="adjustTime('red-time', 1)">△</button>
+                        <button class="time-btn" onclick="adjustTime('red-time', -1)">▽</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">🟢 青信号の時間（秒）</label>
+                <div class="time-input-group">
+                    <input type="number" id="green-time" value="10" min="1" max="99" readonly>
+                    <div class="time-controls">
+                        <button class="time-btn" onclick="adjustTime('green-time', 1)">△</button>
+                        <button class="time-btn" onclick="adjustTime('green-time', -1)">▽</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">💚 青点滅の時間（秒）</label>
+                <div class="time-input-group">
+                    <input type="number" id="blink-time" value="5" min="1" max="99" readonly>
+                    <div class="time-controls">
+                        <button class="time-btn" onclick="adjustTime('blink-time', 1)">△</button>
+                        <button class="time-btn" onclick="adjustTime('blink-time', -1)">▽</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">操作モード</label>
+                <div class="mode-selector">
+                    <button class="mode-btn selected" id="auto-mode-btn" onclick="selectMode('auto')">自動</button>
+                    <button class="mode-btn" id="manual-mode-btn" onclick="selectMode('manual')">手動</button>
+                </div>
+            </div>
+
+            <button class="start-btn" onclick="startSignal()">スタート</button>
+        </div>
+    </div>
+
+    <!-- 信号機画面 -->
+    <div id="signal-screen" class="screen">
+        <div class="traffic-light-container">
+            <div class="signal-box">
+                <div class="signal red" id="red-signal">
+                    <svg class="signal-icon" viewBox="0 0 100 100">
+                        <!-- 止まっている人のシルエット -->
+                        <circle cx="50" cy="25" r="12"/>
+                        <rect x="42" y="40" width="16" height="35" rx="3"/>
+                        <rect x="30" y="45" width="40" height="10" rx="3"/>
+                        <rect x="42" y="75" width="7" height="22" rx="3"/>
+                        <rect x="51" y="75" width="7" height="22" rx="3"/>
+                    </svg>
+                </div>
+                <div class="signal green" id="green-signal">
+                    <svg class="signal-icon" viewBox="0 0 100 100">
+                        <!-- 歩いている人のシルエット -->
+                        <circle cx="50" cy="25" r="12"/>
+                        <rect x="42" y="40" width="16" height="30" rx="3"/>
+                        <rect x="30" y="42" width="18" height="8" rx="3" transform="rotate(-20 39 46)"/>
+                        <rect x="52" y="42" width="18" height="8" rx="3" transform="rotate(20 61 46)"/>
+                        <rect x="38" y="70" width="8" height="25" rx="3" transform="rotate(-30 42 82)"/>
+                        <rect x="54" y="70" width="8" height="25" rx="3" transform="rotate(30 58 82)"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden-controls">
+            <button class="control-btn settings-btn" onclick="backToSettings()">⚙️</button>
+            <button class="control-btn next-btn" id="next-btn" onclick="nextState()">▷</button>
+        </div>
+    </div>
+
+    <script>
+        let mode = 'auto';
+        let currentState = 'red';
+        let timer = null;
+        let redTime = 10;
+        let greenTime = 10;
+        let blinkTime = 5;
+
+        function adjustTime(inputId, delta) {
+            const input = document.getElementById(inputId);
+            let value = parseInt(input.value) + delta;
+            if (value < 1) value = 1;
+            if (value > 99) value = 99;
+            input.value = value;
+        }
+
+        function selectMode(selectedMode) {
+            mode = selectedMode;
+            document.getElementById('auto-mode-btn').classList.toggle('selected', mode === 'auto');
+            document.getElementById('manual-mode-btn').classList.toggle('selected', mode === 'manual');
+        }
+
+        function startSignal() {
+            redTime = parseInt(document.getElementById('red-time').value);
+            greenTime = parseInt(document.getElementById('green-time').value);
+            blinkTime = parseInt(document.getElementById('blink-time').value);
+
+            document.getElementById('settings-screen').classList.remove('active');
+            document.getElementById('signal-screen').classList.add('active');
+
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.classList.toggle('hidden', mode === 'auto');
+
+            currentState = 'red';
+            updateSignal();
+
+            if (mode === 'auto') {
+                startAutoMode();
+            }
+        }
+
+        function updateSignal() {
+            const redSignal = document.getElementById('red-signal');
+            const greenSignal = document.getElementById('green-signal');
+
+            redSignal.classList.remove('active');
+            greenSignal.classList.remove('active', 'blinking');
+
+            if (currentState === 'red') {
+                redSignal.classList.add('active');
+            } else if (currentState === 'green') {
+                greenSignal.classList.add('active');
+            } else if (currentState === 'blink') {
+                greenSignal.classList.add('active', 'blinking');
+            }
+        }
+
+        function startAutoMode() {
+            clearTimeout(timer);
+
+            let duration;
+            if (currentState === 'red') {
+                duration = redTime * 1000;
+            } else if (currentState === 'green') {
+                duration = greenTime * 1000;
+            } else if (currentState === 'blink') {
+                duration = blinkTime * 1000;
+            }
+
+            timer = setTimeout(() => {
+                nextState();
+                if (mode === 'auto') {
+                    startAutoMode();
+                }
+            }, duration);
+        }
+
+        function nextState() {
+            if (currentState === 'red') {
+                currentState = 'green';
+            } else if (currentState === 'green') {
+                currentState = 'blink';
+            } else if (currentState === 'blink') {
+                currentState = 'red';
+            }
+            updateSignal();
+        }
+
+        function backToSettings() {
+            clearTimeout(timer);
+            document.getElementById('signal-screen').classList.remove('active');
+            document.getElementById('settings-screen').classList.add('active');
+        }
+
+        // タッチイベントの最適化
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.tagName === 'BUTTON') {
+                e.target.style.transform = 'scale(0.95)';
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchend', function(e) {
+            if (e.target.tagName === 'BUTTON') {
+                e.target.style.transform = '';
+            }
+        }, {passive: true});
+
+        // フルスクリーンリクエスト
+        function requestFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+                elem.mozRequestFullScreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        // 画面の向きと高さの調整
+        function adjustLayout() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
+        window.addEventListener('resize', adjustLayout);
+        window.addEventListener('orientationchange', adjustLayout);
+        adjustLayout();
+    </script>
+</body>
+</html>
