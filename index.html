@@ -20,7 +20,13 @@
         h1 { text-align: center; margin-bottom: 30px; color: #333; }
         .setting-group { background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 18px; color: #333; }
-        .setting-row input[type="number"] { width: 80px; padding: 10px; font-size: 18px; border-radius: 8px; border: 1px solid #ccc; text-align: right; }
+        .input-group { display: flex; align-items: center; gap: 8px; }
+        .setting-row input[type="number"] { width: 80px; padding: 10px; font-size: 18px; border-radius: 8px; border: 1px solid #ccc; text-align: center; -moz-appearance: textfield; }
+        .setting-row input[type="number"]::-webkit-inner-spin-button,
+        .setting-row input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .spinner-btn { display: flex; flex-direction: column; gap: 2px; }
+        .spinner-btn button { width: 32px; height: 32px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #0a84ff; font-weight: bold; }
+        .spinner-btn button:active { background: #e0e0e0; }
         .radio-group { display: flex; gap: 20px; margin-top: 10px; }
         .radio-group label { font-size: 18px; display: flex; align-items: center; gap: 8px; color: #333; }
         .btn-start { display: block; width: 100%; padding: 15px; font-size: 20px; font-weight: bold; background-color: #0a84ff; color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 20px; }
@@ -72,12 +78,14 @@
             0%, 49% { color: #11ff11; filter: drop-shadow(0 0 20px rgba(0,255,0,0.8)); }
             50%, 100% { color: #003300; filter: none; }
         }
-        .green-light.flashing { animation: blink 0.5s infinite; }
+        .green-light.flashing { animation: blink 1s infinite; }
 
         /* 下部の操作ボタン領域 */
         .controls { position: absolute; bottom: 30px; left: 0; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
         .controls button { pointer-events: auto; background: rgba(255,255,255,0.05); border: none; border-radius: 50%; width: 50px; height: 50px; color: rgba(100,100,100,0.3); font-size: 22px; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         #btn-settings { background: transparent; color: rgba(100,100,100,0.25); font-size: 24px; }
+        #btn-next { background: rgba(10,132,255,0.9) !important; color: white !important; font-size: 26px; box-shadow: 0 4px 12px rgba(10,132,255,0.4); width: 60px; height: 60px; }
+        #btn-next:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -89,15 +97,33 @@
         <div class="setting-group">
             <div class="setting-row">
                 <label>赤信号 (秒)</label>
-                <input type="number" id="input-red" value="5" min="1" max="99">
+                <div class="input-group">
+                    <input type="number" id="input-red" value="5" min="1" max="99">
+                    <div class="spinner-btn">
+                        <button type="button" onclick="changeValue('input-red', 1)">▲</button>
+                        <button type="button" onclick="changeValue('input-red', -1)">▼</button>
+                    </div>
+                </div>
             </div>
             <div class="setting-row">
                 <label>青信号 (秒)</label>
-                <input type="number" id="input-green" value="5" min="1" max="99">
+                <div class="input-group">
+                    <input type="number" id="input-green" value="5" min="1" max="99">
+                    <div class="spinner-btn">
+                        <button type="button" onclick="changeValue('input-green', 1)">▲</button>
+                        <button type="button" onclick="changeValue('input-green', -1)">▼</button>
+                    </div>
+                </div>
             </div>
             <div class="setting-row">
                 <label>青点滅 (秒)</label>
-                <input type="number" id="input-flash" value="3" min="1" max="99">
+                <div class="input-group">
+                    <input type="number" id="input-flash" value="3" min="1" max="99">
+                    <div class="spinner-btn">
+                        <button type="button" onclick="changeValue('input-flash', 1)">▲</button>
+                        <button type="button" onclick="changeValue('input-flash', -1)">▼</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -166,6 +192,20 @@
         const lightRed = document.getElementById('light-red');
         const lightGreen = document.getElementById('light-green');
         const btnNext = document.getElementById('btn-next');
+
+        // 上下ボタンで値を変更する関数
+        function changeValue(inputId, delta) {
+            const input = document.getElementById(inputId);
+            let currentValue = parseInt(input.value) || 1;
+            let newValue = currentValue + delta;
+
+            // min/maxの範囲内に収める
+            const min = parseInt(input.min) || 1;
+            const max = parseInt(input.max) || 99;
+            newValue = Math.max(min, Math.min(max, newValue));
+
+            input.value = newValue;
+        }
 
         // スタートボタンを押した時
         function startSignal() {
