@@ -1,248 +1,440 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- スマホやタブレットで画面サイズを最適化 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>歩行者信号機</title>
+    <title>歩行者信号機アプリ</title>
     <style>
-        /* 全体のリセットと基本設定 */
-        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: sans-serif; background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 50%, #E0F6FF 100%); color: #fff; overflow: hidden; }
+        :root {
+            --bg-color: #87CEEB; /* 空色 */
+            --signal-bg: #e0e0e0;
+            --light-off: #1a1a1a;
+            --light-red: #ff3333;
+            --light-green: #00ffcc;
+            --ui-color: #555;
+        }
 
-        /* 画面切り替え用 */
-        .screen { display: none; width: 100%; height: 100%; }
-        .screen.active { display: flex; flex-direction: column; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
 
-        /* --- 設定画面のデザイン --- */
-        #settings-screen { background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 50%, #E0F6FF 100%); padding: 20px; overflow-y: auto; }
-        h1 { text-align: center; margin-bottom: 30px; color: #333; }
-        .setting-group { background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 18px; color: #333; }
-        .setting-row input[type="number"] { width: 80px; padding: 10px; font-size: 18px; border-radius: 8px; border: 1px solid #ccc; text-align: right; }
-        .radio-group { display: flex; gap: 20px; margin-top: 10px; }
-        .radio-group label { font-size: 18px; display: flex; align-items: center; gap: 8px; color: #333; }
-        .btn-start { display: block; width: 100%; padding: 15px; font-size: 20px; font-weight: bold; background-color: #0a84ff; color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 20px; }
-
-        /* --- 信号機画面のデザイン --- */
-        #signal-screen { justify-content: center; align-items: center; position: relative; background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 50%, #E0F6FF 100%); }
-
-        /* 信号機の筐体 */
-        .signal-body {
-            background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 50%, #808080 100%);
-            padding: 3vh;
-            border-radius: 4vh;
+        /* --- 設定画面 --- */
+        #settings-screen {
             display: flex;
             flex-direction: column;
-            gap: 2vh;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
-            border: 3px solid #909090;
-        }
-
-        /* 赤・青それぞれのライトの枠 */
-        .light-box {
-            width: 55vmin;
-            height: 55vmin;
-            max-width: 300px;
-            max-height: 300px;
-            background-color: #1a1a1a;
-            border-radius: 20px;
-            border: 4px solid #505050;
-            display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: #333;
+            background-color: #f0f8ff;
+            z-index: 10;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        h1 { 
+            font-size: 2rem; 
+            margin-bottom: 2rem; 
+            color: #007bff;
+        }
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+            width: 80%;
+            max-width: 400px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .num-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .num-btn:active { background-color: #eee; }
+
+        input[type="number"] {
+            width: 80px;
+            height: 50px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            color: #333;
+        }
+
+        /* モード切替スイッチ */
+        .mode-switch {
+            display: flex;
+            background: #e0e0e0;
+            border-radius: 30px;
+            padding: 5px;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn {
+            padding: 10px 30px;
+            border: none;
+            background: transparent;
+            color: #777;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: 0.3s;
+        }
+
+        .mode-btn.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #start-btn {
+            padding: 15px 60px;
+            font-size: 1.5rem;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        #start-btn:active { transform: scale(0.96); }
+
+        /* --- 表示画面（信号機） --- */
+        #display-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
             position: relative;
-            box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
         }
 
-        /* SVGアイコンのスタイル */
-        .icon { width: 80%; height: 80%; }
-
-        /* 赤信号の状態 */
-        .red-light { color: #330000; transition: 0.1s; } /* 消灯時 */
-        .red-light.on { color: #ff1111; filter: drop-shadow(0 0 20px rgba(255,0,0,0.8)); } /* 点灯時 */
-
-        /* 青(緑)信号の状態 */
-        .green-light { color: #003300; transition: 0.1s; } /* 消灯時 */
-        .green-light.on { color: #11ff11; filter: drop-shadow(0 0 20px rgba(0,255,0,0.8)); } /* 点灯時 */
-
-        /* 青点滅のアニメーション */
-        @keyframes blink {
-            0%, 49% { color: #11ff11; filter: drop-shadow(0 0 20px rgba(0,255,0,0.8)); }
-            50%, 100% { color: #003300; filter: none; }
+        /* 信号機本体 */
+        .signal-box {
+            background-color: var(--signal-bg);
+            border-radius: 40px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            height: 85vh;
+            width: auto;
+            aspect-ratio: 1 / 2.2;
         }
-        .green-light.flashing { animation: blink 0.5s infinite; }
 
-        /* 下部の操作ボタン領域 */
-        .controls { position: absolute; bottom: 30px; left: 0; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-        .controls button { pointer-events: auto; background: rgba(255,255,255,0.05); border: none; border-radius: 50%; width: 50px; height: 50px; color: rgba(100,100,100,0.3); font-size: 22px; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        #btn-settings { background: transparent; color: rgba(100,100,100,0.25); font-size: 24px; }
+        .light-container {
+            flex: 1;
+            background-color: #000;
+            border-radius: 30px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-top: 6px solid #666;
+        }
+
+        /* SVGアイコンの設定 */
+        .signal-icon {
+            width: 90%;
+            height: 90%;
+            opacity: 0.15;
+            transition: opacity 0.1s;
+        }
+        
+        .light-container.red-active .signal-icon {
+            fill: var(--light-red);
+            opacity: 1;
+            filter: drop-shadow(0 0 15px var(--light-red));
+        }
+
+        .light-container.green-active .signal-icon {
+            fill: var(--light-green);
+            opacity: 1;
+            filter: drop-shadow(0 0 15px var(--light-green));
+        }
+
+        /* --- 隠しコントロールボタン（修正：背景の丸を削除） --- */
+        .control-btn {
+            position: absolute;
+            bottom: 20px;
+            width: 60px;
+            height: 60px;
+            background: transparent; /* 背景透明 */
+            border: none;
+            color: rgba(0, 0, 0, 0.2); /* 薄いグレー */
+            font-size: 30px; /* アイコンを少し大きく */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s;
+            z-index: 100;
+            /* タップしやすいように透明な領域としてのサイズ(width/height)は維持 */
+        }
+
+        .control-btn:hover, .control-btn:active {
+            background: transparent;
+            color: rgba(0, 0, 0, 0.5); /* ホバー時に少し濃く */
+        }
+
+        #settings-btn { left: 20px; }
+        #manual-next-btn { right: 20px; display: none; }
+
     </style>
 </head>
 <body>
 
-    <!-- ================= 設定画面 ================= -->
-    <div id="settings-screen" class="screen active">
+    <!-- 設定画面 -->
+    <div id="settings-screen">
         <h1>信号機の設定</h1>
 
-        <div class="setting-group">
-            <div class="setting-row">
-                <label>赤信号 (秒)</label>
-                <input type="number" id="input-red" value="5" min="1" max="99">
-            </div>
-            <div class="setting-row">
-                <label>青信号 (秒)</label>
-                <input type="number" id="input-green" value="5" min="1" max="99">
-            </div>
-            <div class="setting-row">
-                <label>青点滅 (秒)</label>
-                <input type="number" id="input-flash" value="3" min="1" max="99">
-            </div>
+        <div class="mode-switch">
+            <button class="mode-btn active" id="mode-auto" onclick="setMode('auto')">自動</button>
+            <button class="mode-btn" id="mode-manual" onclick="setMode('manual')">手動</button>
         </div>
 
         <div class="setting-group">
-            <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
-                <label>動作モード</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="mode" value="auto" checked> 自動(タイマー)</label>
-                    <label><input type="radio" name="mode" value="manual"> 手動(ボタン)</label>
-                </div>
+            <label class="setting-label">赤信号の時間 (秒)</label>
+            <div class="input-wrapper">
+                <button class="num-btn" onclick="adjustValue('red-duration', -1)">-</button>
+                <input type="number" id="red-duration" value="5" min="1">
+                <button class="num-btn" onclick="adjustValue('red-duration', 1)">+</button>
             </div>
         </div>
 
-        <button class="btn-start" onclick="startSignal()">信号機を表示</button>
+        <div class="setting-group">
+            <label class="setting-label">青信号の時間 (秒)</label>
+            <div class="input-wrapper">
+                <button class="num-btn" onclick="adjustValue('green-duration', -1)">-</button>
+                <input type="number" id="green-duration" value="5" min="1">
+                <button class="num-btn" onclick="adjustValue('green-duration', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label class="setting-label">青点滅の時間 (秒)</label>
+            <div class="input-wrapper">
+                <button class="num-btn" onclick="adjustValue('blink-duration', -1)">-</button>
+                <input type="number" id="blink-duration" value="3" min="1">
+                <button class="num-btn" onclick="adjustValue('blink-duration', 1)">+</button>
+            </div>
+        </div>
+
+        <button id="start-btn" onclick="startApp()">スタート</button>
     </div>
 
-    <!-- ================= 信号機表示画面 ================= -->
-    <div id="signal-screen" class="screen">
-        <div class="signal-body">
-
-            <!-- 上：赤信号（立つ人） -->
-            <div class="light-box">
-                <svg viewBox="0 0 100 100" class="icon red-light" id="light-red">
-                    <circle cx="50" cy="22" r="9" fill="currentColor"/>
-                    <path d="M38,34 L62,34 L58,60 L42,60 Z" fill="currentColor"/>
-                    <path d="M38,34 L30,55" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-                    <path d="M62,34 L70,55" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-                    <path d="M45,60 L45,85" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-                    <path d="M55,60 L55,85" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+    <!-- 信号機表示画面 -->
+    <div id="display-screen">
+        <div class="signal-box">
+            <!-- 赤信号（上の窓） -->
+            <div class="light-container" id="red-light">
+                <!-- 止まれの人 SVG -->
+                <svg class="signal-icon" viewBox="0 0 100 200" fill="#333">
+                    <!-- 帽子 -->
+                    <path d="M35,25 L65,25 L70,30 L30,30 Z" /> 
+                    <path d="M40,15 L60,15 L60,25 L40,25 Z" />
+                    <!-- 頭 -->
+                    <circle cx="50" cy="45" r="12" />
+                    <!-- 体 -->
+                    <rect x="35" y="60" width="30" height="60" rx="5" />
+                    <!-- 腕 -->
+                    <rect x="25" y="60" width="10" height="50" rx="5" />
+                    <rect x="65" y="60" width="10" height="50" rx="5" />
+                    <!-- 足 -->
+                    <rect x="38" y="120" width="10" height="50" rx="5" />
+                    <rect x="52" y="120" width="10" height="50" rx="5" />
                 </svg>
             </div>
 
-            <!-- 下：青信号（歩く人） -->
-            <div class="light-box">
-                <svg viewBox="0 0 100 100" class="icon green-light" id="light-green">
-                    <circle cx="55" cy="18" r="9" fill="currentColor"/>
-                    <path d="M45,28 L58,31 L50,55 L38,52 Z" fill="currentColor"/>
-                    <path d="M52,32 L65,45 L75,35" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M48,30 L30,40 L15,35" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M45,52 L60,65 L60,85" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M40,52 L35,70 L15,75" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- 青信号（下の窓） -->
+            <div class="light-container" id="green-light">
+                <!-- 進めの人 SVG -->
+                <svg class="signal-icon" viewBox="0 0 100 200" fill="#333">
+                    <!-- 帽子 -->
+                    <path d="M40,25 L70,25 L75,30 L35,30 Z" /> 
+                    <path d="M45,15 L65,15 L65,25 L45,25 Z" />
+                    <!-- 頭 -->
+                    <circle cx="55" cy="45" r="12" />
+                    <!-- 体 -->
+                    <path d="M45,60 L70,60 L65,110 L40,110 Z" />
+                    
+                    <!-- 腕 -->
+                    <path d="M45,65 L20,95 L25,100 L50,70 Z" /> 
+                    <path d="M65,65 L90,95 L85,100 L60,70 Z" /> 
+                    
+                    <!-- 足 -->
+                    <path d="M45,110 L25,160 L35,165 L55,115 Z" />
+                    <path d="M60,110 L80,160 L70,165 L50,115 Z" />
                 </svg>
             </div>
-
         </div>
 
-        <!-- 下部操作ボタン -->
-        <div class="controls">
-            <button id="btn-settings" onclick="openSettings()">⚙️</button>
-            <button id="btn-next" onclick="nextState()" style="display: none;">▷</button>
-        </div>
+        <!-- 隠しコントロール -->
+        <button id="settings-btn" class="control-btn" onclick="stopApp()">⚙️</button>
+        <button id="manual-next-btn" class="control-btn" onclick="manualNext()">▷</button>
     </div>
 
-    <!-- ================= JavaScript (動作ロジック) ================= -->
     <script>
-        // 設定値を入れる変数
-        let config = { red: 5, green: 5, flash: 3, mode: 'auto' };
-
-        // 信号の状態 (red -> green -> flashing -> red)
-        let currentState = 'red';
+        // 設定値
+        let redDuration = 5000;
+        let greenDuration = 5000;
+        let blinkDuration = 3000;
+        let currentMode = 'auto';
+        
+        // 状態管理
+        let currentState = 'RED'; 
         let timerId = null;
+        let blinkIntervalId = null;
 
-        // 画面の要素
-        const screenSettings = document.getElementById('settings-screen');
-        const screenSignal = document.getElementById('signal-screen');
-        const lightRed = document.getElementById('light-red');
-        const lightGreen = document.getElementById('light-green');
-        const btnNext = document.getElementById('btn-next');
+        // DOM要素
+        const redLight = document.getElementById('red-light');
+        const greenLight = document.getElementById('green-light');
+        const manualNextBtn = document.getElementById('manual-next-btn');
 
-        // スタートボタンを押した時
-        function startSignal() {
-            // 設定値の取得
-            config.red = parseInt(document.getElementById('input-red').value) || 5;
-            config.green = parseInt(document.getElementById('input-green').value) || 5;
-            config.flash = parseInt(document.getElementById('input-flash').value) || 3;
-            config.mode = document.querySelector('input[name="mode"]:checked').value;
+        // モード設定
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-auto').classList.toggle('active', mode === 'auto');
+            document.getElementById('mode-manual').classList.toggle('active', mode === 'manual');
+        }
 
-            // 画面の切り替え
-            screenSettings.classList.remove('active');
-            screenSignal.classList.add('active');
+        // 数値調整ボタン
+        function adjustValue(id, amount) {
+            const input = document.getElementById(id);
+            let val = parseInt(input.value) + amount;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
 
-            // 手動モードの場合は▷ボタンを表示
-            btnNext.style.display = (config.mode === 'manual') ? 'flex' : 'none';
+        // アプリ開始
+        function startApp() {
+            // 設定値の読み込み
+            redDuration = parseInt(document.getElementById('red-duration').value) * 1000;
+            greenDuration = parseInt(document.getElementById('green-duration').value) * 1000;
+            blinkDuration = parseInt(document.getElementById('blink-duration').value) * 1000;
 
-            // 初期状態を赤にしてスタート
-            currentState = 'red';
-            updateLights();
+            // 画面切り替え
+            document.getElementById('settings-screen').style.display = 'none';
+            document.getElementById('display-screen').style.display = 'flex';
 
-            if (config.mode === 'auto') {
-                scheduleNext();
+            // 手動ボタンの表示切替
+            manualNextBtn.style.display = currentMode === 'manual' ? 'flex' : 'none';
+
+            // 開始状態
+            changeState('RED');
+        }
+
+        // アプリ終了
+        function stopApp() {
+            clearTimers();
+            document.getElementById('display-screen').style.display = 'none';
+            document.getElementById('settings-screen').style.display = 'flex';
+        }
+
+        function clearTimers() {
+            if (timerId) clearTimeout(timerId);
+            if (blinkIntervalId) clearInterval(blinkIntervalId);
+            redLight.classList.remove('red-active');
+            greenLight.classList.remove('green-active');
+            greenLight.style.opacity = '';
+        }
+
+        // 状態遷移ロジック
+        function changeState(newState) {
+            clearTimers();
+            currentState = newState;
+
+            if (newState === 'RED') {
+                redLight.classList.add('red-active');
+                
+                if (currentMode === 'auto') {
+                    timerId = setTimeout(() => changeState('GREEN'), redDuration);
+                }
+
+            } else if (newState === 'GREEN') {
+                greenLight.classList.add('green-active');
+
+                if (currentMode === 'auto') {
+                    timerId = setTimeout(() => changeState('BLINK_GREEN'), greenDuration);
+                }
+
+            } else if (newState === 'BLINK_GREEN') {
+                let isVisible = true;
+                const blinkSpeed = 500;
+                let elapsed = 0;
+
+                const doBlink = () => {
+                    isVisible = !isVisible;
+                    if (isVisible) {
+                        greenLight.classList.add('green-active');
+                    } else {
+                        greenLight.classList.remove('green-active');
+                    }
+                };
+
+                greenLight.classList.add('green-active');
+                
+                blinkIntervalId = setInterval(() => {
+                    doBlink();
+                    elapsed += blinkSpeed;
+
+                    if (currentMode === 'auto' && elapsed >= blinkDuration) {
+                        changeState('RED');
+                    }
+                }, blinkSpeed);
             }
         }
 
-        // 設定画面に戻る時
-        function openSettings() {
-            clearTimeout(timerId); // タイマーをストップ
-            screenSignal.classList.remove('active');
-            screenSettings.classList.add('active');
-        }
-
-        // 信号の色を切り替える (内部ロジック)
-        function nextState() {
-            clearTimeout(timerId);
-
-            if (currentState === 'red') {
-                currentState = 'green';
-            } else if (currentState === 'green') {
-                currentState = 'flashing';
-            } else {
-                currentState = 'red';
+        // 手動送りボタン
+        function manualNext() {
+            if (currentState === 'RED') {
+                changeState('GREEN');
+            } else if (currentState === 'GREEN') {
+                changeState('BLINK_GREEN');
+            } else if (currentState === 'BLINK_GREEN') {
+                changeState('RED');
             }
-
-            updateLights();
-
-            if (config.mode === 'auto') {
-                scheduleNext();
-            }
-        }
-
-        // ランプの見た目を更新する
-        function updateLights() {
-            // いったん全てのクラスを消す
-            lightRed.className = 'icon red-light';
-            lightGreen.className = 'icon green-light';
-
-            // 現在の状態に合わせてクラスを付与
-            if (currentState === 'red') {
-                lightRed.classList.add('on');
-            } else if (currentState === 'green') {
-                lightGreen.classList.add('on');
-            } else if (currentState === 'flashing') {
-                lightGreen.classList.add('flashing');
-            }
-        }
-
-        // 自動モード時のタイマー設定
-        function scheduleNext() {
-            let duration = 0;
-            if (currentState === 'red') duration = config.red * 1000;
-            if (currentState === 'green') duration = config.green * 1000;
-            if (currentState === 'flashing') duration = config.flash * 1000;
-
-            timerId = setTimeout(() => {
-                nextState();
-            }, duration);
         }
     </script>
 </body>
