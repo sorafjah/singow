@@ -148,13 +148,14 @@
       transition: background-color 0.3s;
     }
 
-    .signal.red { background: #1a1a1a; }
+    /* 消灯時：まっ黒ではなく濃いグレーに */
+    .signal.red { background: #3a3a3a; }
     .signal.red.active {
       background: #ff0000;
       box-shadow: 0 0 40px rgba(255,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.2);
     }
 
-    .signal.green { background: #1a1a1a; }
+    .signal.green { background: #3a3a3a; }
 
     /* 人物は白のまま、光だけ控えめ */
     .signal.green.active {
@@ -170,45 +171,60 @@
         box-shadow: 0 0 22px rgba(0,255,0,0.45), inset 0 0 14px rgba(255,255,255,0.10);
       }
       50%, 100% {
-        background: #1a1a1a;
+        background: #3a3a3a;
         box-shadow: none;
       }
     }
 
     .signal-icon { width: 60%; height: 60%; fill: currentColor; }
 
-    .signal.red .signal-icon { color: #400000; }
+    .signal.red .signal-icon { color: #6b6b6b; }
     .signal.red.active .signal-icon { color: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); }
 
-    .signal.green .signal-icon { color: #004000; }
+    .signal.green .signal-icon { color: #6b6b6b; }
     .signal.green.active .signal-icon { color: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); }
 
-    /* 操作ボタン（信号の真下に配置） */
-    .hidden-controls {
-      display: flex;
-      justify-content: center;
-      gap: 18px;
-      margin-top: 16px;
-      pointer-events: auto;
-    }
-
-    .control-btn {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
+    /* 左上の設定ボタン（背景なし） */
+    .settings-btn-fixed {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 52px;
+      height: 52px;
       border: none;
+      background: transparent;
       cursor: pointer;
-      opacity: 0.18;
-      transition: opacity 0.3s;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 28px;
-      background: #666;
-      color: white;
+      font-size: 30px;
+      z-index: 10;
+    }
+    .settings-btn-fixed:active { opacity: 0.6; }
+
+    /* 次へボタン（設定ボタンの真下・線だけの三角） */
+    .next-btn {
+      position: fixed;
+      top: 78px;
+      left: 16px;
+      width: 52px;
+      height: 52px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      padding: 0;
+    }
+    .next-btn:active { opacity: 0.6; }
+
+    .next-btn svg {
+      width: 26px;
+      height: 26px;
     }
 
-    .control-btn:active { opacity: 0.55; }
     .next-btn.hidden { display: none; }
 
     /* レスポンシブ調整 */
@@ -217,7 +233,8 @@
       h1 { font-size: 24px; }
       .setting-label { font-size: 16px; }
       .time-input-group input { font-size: 20px; }
-      .control-btn { width: 50px; height: 50px; font-size: 24px; }
+      .settings-btn-fixed { width: 46px; height: 46px; font-size: 26px; top: 10px; left: 10px; }
+      .next-btn { width: 46px; height: 46px; top: 66px; left: 10px; }
     }
 
     @media (orientation: landscape) {
@@ -278,6 +295,9 @@
 
   <!-- 信号機画面 -->
   <div id="signal-screen" class="screen">
+    <!-- 左上固定の設定ボタン -->
+    <button class="settings-btn-fixed" id="settings-btn" onclick="backToSettings()">⚙️</button>
+
     <div class="traffic-light-container">
       <div class="signal-box">
         <div class="signal red" id="red-signal">
@@ -312,12 +332,14 @@
         </div>
       </div>
 
-      <!-- ⚙️ と ▷ を信号の真下へ -->
-      <div class="hidden-controls">
-        <button class="control-btn settings-btn" id="settings-btn" onclick="backToSettings()">⚙️</button>
-        <button class="control-btn next-btn" id="next-btn" onclick="nextState()">▷</button>
-      </div>
     </div>
+
+    <!-- ▷ を設定ボタンの真下へ（線だけの三角） -->
+    <button class="next-btn" id="next-btn" onclick="nextState()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M6 3 L20 12 L6 21 Z" />
+      </svg>
+    </button>
   </div>
 
   <script>
